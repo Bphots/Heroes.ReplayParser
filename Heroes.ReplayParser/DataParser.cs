@@ -63,7 +63,7 @@ namespace Heroes.ReplayParser
             }
         }
 
-        public static Tuple<ReplayParseResult, Replay> ParseReplay(string fileName, bool ignoreErrors, bool deleteFile, bool allowPTRRegion = false, bool detailedBattleLobbyParsing = false)
+        public static Tuple<ReplayParseResult, Replay> ParseReplay(string fileName, bool ignoreErrors, bool deleteFile, bool allowPTRRegion = false)
         {
             try
             {
@@ -76,14 +76,40 @@ namespace Heroes.ReplayParser
                     return new Tuple<ReplayParseResult, Replay>(ReplayParseResult.PreAlphaWipe, null);
 
                 using (var archive = new MpqArchive(fileName))
-                    ParseReplayArchive(replay, archive, ignoreErrors, detailedBattleLobbyParsing);
+                    ParseReplayArchive(replay, archive, ignoreErrors);
 
                 if (deleteFile)
                     File.Delete(fileName);
 
                 return ParseReplayResults(replay, ignoreErrors, allowPTRRegion);
             }
-            catch
+            catch (Exception e)
+            {
+                return new Tuple<ReplayParseResult, Replay>(ReplayParseResult.Exception, null);
+            }
+        }
+
+        public static Tuple<ReplayParseResult, Replay> ParseReplayFull(string fileName, bool ignoreErrors, bool deleteFile, bool allowPTRRegion = false)
+        {
+            try
+            {
+                var replay = new Replay();
+
+                // File in the version numbers for later use.
+                MpqHeader.ParseHeader(replay, fileName);
+
+                if (!ignoreErrors && replay.ReplayBuild < 32455)
+                    return new Tuple<ReplayParseResult, Replay>(ReplayParseResult.PreAlphaWipe, null);
+
+                using (var archive = new MpqArchive(fileName))
+                    ParseReplayArchive(replay, archive, ignoreErrors, true);
+
+                if (deleteFile)
+                    File.Delete(fileName);
+
+                return ParseReplayResults(replay, ignoreErrors, allowPTRRegion);
+            }
+            catch (Exception e)
             {
                 return new Tuple<ReplayParseResult, Replay>(ReplayParseResult.Exception, null);
             }
@@ -115,7 +141,7 @@ namespace Heroes.ReplayParser
                 return new Tuple<ReplayParseResult, Replay>(ReplayParseResult.Success, replay);
         }
 
-        private static void ParseReplayArchive(Replay replay, MpqArchive archive, bool ignoreErrors, bool detailedBattleLobbyParsing = false)
+        private static void ParseReplayArchive(Replay replay, MpqArchive archive, bool ignoreErrors, bool fullParse = false)
         {
             archive.AddListfileFilenames();
 
@@ -142,16 +168,21 @@ namespace Heroes.ReplayParser
 
             replay.TrackerEvents = ReplayTrackerEvents.Parse(GetMpqFile(archive, ReplayTrackerEvents.FileName));
 
-            try
+            replay.GameEvents = new List<GameEvent>();
+            if (fullParse)
             {
-                replay.GameEvents = ReplayGameEvents.Parse(GetMpqFile(archive, ReplayGameEvents.FileName), replay.ClientListByUserID, replay.ReplayBuild, replay.ReplayVersionMajor);
-                replay.IsGameEventsParsedSuccessfully = true;
-            }
-            catch
-            {
-                replay.GameEvents = new List<GameEvent>();
+                try
+                {
+                    replay.GameEvents = ReplayGameEvents.Parse(GetMpqFile(archive, ReplayGameEvents.FileName), replay.ClientListByUserID, replay.ReplayBuild, replay.ReplayVersionMajor);
+                    replay.IsGameEventsParsedSuccessfully = true;
+                }
+                catch
+                {
+                    replay.GameEvents = new List<GameEvent>();
+                }
             }
 
+            if (fullParse)
             {
                 // Gather talent selections
                 var talentGameEventsDictionary = replay.GameEvents
@@ -167,12 +198,8 @@ namespace Heroes.ReplayParser
 
             // Replay Server Battlelobby
             if (!ignoreErrors && archive.Any(i => i.Filename == ReplayServerBattlelobby.FileName))
-            {
-                if (detailedBattleLobbyParsing)
-                    ReplayServerBattlelobby.Parse(replay, GetMpqFile(archive, ReplayServerBattlelobby.FileName));
-                else
-                    ReplayServerBattlelobby.GetBattleTags(replay, GetMpqFile(archive, ReplayServerBattlelobby.FileName));
-            }
+				ReplayServerBattlelobby.GetBattleTags(replay, GetMpqFile(archive, ReplayServerBattlelobby.FileName));
+				// ReplayServerBattlelobby.Parse(replay, GetMpqFile(archive, ReplayServerBattlelobby.FileName));
 
             // Parse Unit Data using Tracker events
             Unit.ParseUnitData(replay);
@@ -184,7 +211,7 @@ namespace Heroes.ReplayParser
                     Statistics.Parse(replay);
                     replay.IsStatisticsParsedSuccessfully = true;
                 }
-                catch
+                catch (Exception e)
                 {
                     replay.IsGameEventsParsedSuccessfully = false;
                 }
