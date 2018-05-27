@@ -1,4 +1,6 @@
-﻿namespace Heroes.ReplayParser
+﻿using Newtonsoft.Json;
+
+namespace Heroes.ReplayParser
 {
     using System;
     using System.Collections.Generic;
@@ -48,12 +50,15 @@
         public Player[] ClientListByWorkingSetSlotID { get; set; } = new Player[16];
 
         /// <summary> Gets the game events. </summary>
+        [JsonIgnore]
         public List<GameEvent> GameEvents { get; set; } = new List<GameEvent>();
 
         /// <summary> Gets the tracker events. </summary>
+        [JsonIgnore]
         public List<TrackerEvent> TrackerEvents { get; set; }
 
         /// <summary> Gets a list of units. </summary>
+        [JsonIgnore]
         public List<Unit> Units { get; set; } = new List<Unit>();
 
         /// <summary> Gets the number of frames in this replay. </summary>
@@ -79,6 +84,7 @@
 
         public bool IsGameEventsParsedSuccessfully { get; set; } = false;
         public bool? IsStatisticsParsedSuccessfully { get; set; } = null;
+        
     }
 
     public class PeriodicXPBreakdown

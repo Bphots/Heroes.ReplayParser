@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Heroes.ReplayParser
 {
@@ -103,6 +104,7 @@ namespace Heroes.ReplayParser
         /// <summary>
         /// Gets or sets the player's in game Hero units.
         /// </summary>
+        [JsonIgnore]
         public List<Unit> HeroUnits { get; set; } = new List<Unit>();
 
         /// <summary>
