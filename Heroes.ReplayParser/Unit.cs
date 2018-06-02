@@ -597,77 +597,77 @@ namespace Heroes.ReplayParser
             }
 
             // Estimate Hero positions from CCmdEvent and CCmdUpdateTargetPointEvent (Movement points)
-            {
-                // Excluding heroes with multiple units like Lost Vikings, and Abathur with 'Ultimate Evolution' clones
-                // It's okay to not estimate Abathur's position, as he rarely moves and we also get an accurate position each time he spawns a locust
-                var playerToActiveHeroUnitIndexDictionary = replay.Players.Where(i => i.HeroUnits.Select(j => j.Name).Distinct().Count() == 1).ToDictionary(i => i, i => 0);
+            //{
+            //    // Excluding heroes with multiple units like Lost Vikings, and Abathur with 'Ultimate Evolution' clones
+            //    // It's okay to not estimate Abathur's position, as he rarely moves and we also get an accurate position each time he spawns a locust
+            //    var playerToActiveHeroUnitIndexDictionary = replay.Players.Where(i => i.HeroUnits.Select(j => j.Name).Distinct().Count() == 1).ToDictionary(i => i, i => 0);
 
-                // This is a list of 'Player', 'TimeSpan', and 'EventPosition' for each CCmdEvent where ability data is null and a position is included
-                var playerCCmdEventLists = replay.GameEvents.Where(i =>
-                    i.eventType == GameEventType.CCmdEvent &&
-                    i.data.array[1] == null &&
-                    i.data.array[2] != null &&
-                    i.data.array[2].array.Length == 3 &&
-                    playerToActiveHeroUnitIndexDictionary.ContainsKey(i.player)).Select(i => new {
-                        i.player,
-                        Position = new Position {
-                            TimeSpan = i.TimeSpan,
-                            Point = Point.FromEventFormat(i.data.array[2].array[0].unsignedInt.Value, i.data.array[2].array[1].unsignedInt.Value),
-                            IsEstimated = true } })
-                        .GroupBy(i => i.player)
-                        .Select(i => new {
-                            Player = i.Key,
-                            Positions = i.Select(j => j.Position)
+            //    // This is a list of 'Player', 'TimeSpan', and 'EventPosition' for each CCmdEvent where ability data is null and a position is included
+            //    var playerCCmdEventLists = replay.GameEvents.Where(i =>
+            //        i.eventType == GameEventType.CCmdEvent &&
+            //        i.data.array[1] == null &&
+            //        i.data.array[2] != null &&
+            //        i.data.array[2].array.Length == 3 &&
+            //        playerToActiveHeroUnitIndexDictionary.ContainsKey(i.player)).Select(i => new {
+            //            i.player,
+            //            Position = new Position {
+            //                TimeSpan = i.TimeSpan,
+            //                Point = Point.FromEventFormat(i.data.array[2].array[0].unsignedInt.Value, i.data.array[2].array[1].unsignedInt.Value),
+            //                IsEstimated = true } })
+            //            .GroupBy(i => i.player)
+            //            .Select(i => new {
+            //                Player = i.Key,
+            //                Positions = i.Select(j => j.Position)
 
-                                // Union the CCmdUpdateTargetPointEvents for each Player
-                                .Union(replay.GameEvents.Where(j =>
-                                    j.player == i.Key &&
-                                    j.eventType == GameEventType.CCmdUpdateTargetPointEvent)
-                                .Select(j => new Position {
-                                    TimeSpan = j.TimeSpan,
-                                    Point = Point.FromEventFormat(j.data.array[0].unsignedInt.Value, j.data.array[1].unsignedInt.Value),
-                                    IsEstimated = true }))
+            //                    // Union the CCmdUpdateTargetPointEvents for each Player
+            //                    .Union(replay.GameEvents.Where(j =>
+            //                        j.player == i.Key &&
+            //                        j.eventType == GameEventType.CCmdUpdateTargetPointEvent)
+            //                    .Select(j => new Position {
+            //                        TimeSpan = j.TimeSpan,
+            //                        Point = Point.FromEventFormat(j.data.array[0].unsignedInt.Value, j.data.array[1].unsignedInt.Value),
+            //                        IsEstimated = true }))
 
-                                // Take the single latest applicable CCmdEvent or CCmdUpdateTargetPointEvent if there are more than one in a second
-                                .GroupBy(j => (int)j.TimeSpan.TotalSeconds)
-                                .Select(j => j.OrderByDescending(k => k.TimeSpan).First())
+            //                    // Take the single latest applicable CCmdEvent or CCmdUpdateTargetPointEvent if there are more than one in a second
+            //                    .GroupBy(j => (int)j.TimeSpan.TotalSeconds)
+            //                    .Select(j => j.OrderByDescending(k => k.TimeSpan).First())
 
-                            .ToArray() });
+            //                .ToArray() });
 
-                // Find the applicable events for each Hero unit while they were alive
-                var playerAndHeroCCmdEventLists = playerCCmdEventLists.Select(i => i.Player.HeroUnits.Select(j => new {
-                    HeroUnit = j,
-                    Positions = i.Positions.Where(k => k.TimeSpan > j.TimeSpanBorn && (!j.TimeSpanDied.HasValue || k.TimeSpan < j.TimeSpanDied.Value)).OrderBy(k => k.TimeSpan).ToArray() }));
+            //    // Find the applicable events for each Hero unit while they were alive
+            //    var playerAndHeroCCmdEventLists = playerCCmdEventLists.Select(i => i.Player.HeroUnits.Select(j => new {
+            //        HeroUnit = j,
+            //        Positions = i.Positions.Where(k => k.TimeSpan > j.TimeSpanBorn && (!j.TimeSpanDied.HasValue || k.TimeSpan < j.TimeSpanDied.Value)).OrderBy(k => k.TimeSpan).ToArray() }));
 
-                const double PlayerSpeedUnitsPerSecond = 5.0;
+            //    const double PlayerSpeedUnitsPerSecond = 5.0;
 
-                foreach (var playerCCmdEventList in playerAndHeroCCmdEventLists)
-                foreach (var heroCCmdEventList in playerCCmdEventList)
-                {
-                    // Estimate the hero unit travelling to each intended destination
-                    // Only save one position per second, and prefer accurate positions
-                    // Heroes can have a lot more positions, and probably won't be useful more frequently than this
-                    var heroTargetLocationArray = heroCCmdEventList.HeroUnit.Positions.Union(new[] { new Position { TimeSpan = heroCCmdEventList.HeroUnit.TimeSpanBorn, Point = heroCCmdEventList.HeroUnit.PointBorn } }).Union(heroCCmdEventList.Positions).GroupBy(i => (int)i.TimeSpan.TotalSeconds).Select(i => i.OrderBy(j => j.IsEstimated).First()).OrderBy(i => i.TimeSpan).ToArray();
-                    var currentEstimatedPosition = heroTargetLocationArray[0];
-                    for (var i = 0; i < heroTargetLocationArray.Length - 1; i++)
-                        if (!heroTargetLocationArray[i + 1].IsEstimated)
-                            currentEstimatedPosition = heroTargetLocationArray[i + 1];
-                        else
-                        {
-                            var percentageOfDistanceTravelledToTargetLocation = (heroTargetLocationArray[i + 1].TimeSpan - currentEstimatedPosition.TimeSpan).TotalSeconds * PlayerSpeedUnitsPerSecond / currentEstimatedPosition.Point.DistanceTo(heroTargetLocationArray[i + 1].Point);
-                            currentEstimatedPosition = new Position {
-                                TimeSpan = heroTargetLocationArray[i + 1].TimeSpan,
-                                Point = percentageOfDistanceTravelledToTargetLocation >= 1
-                                    ? heroTargetLocationArray[i + 1].Point
-                                    : new Point {
-                                        X = (int)((heroTargetLocationArray[i + 1].Point.X - currentEstimatedPosition.Point.X) * percentageOfDistanceTravelledToTargetLocation + currentEstimatedPosition.Point.X),
-                                        Y = (int)((heroTargetLocationArray[i + 1].Point.Y - currentEstimatedPosition.Point.Y) * percentageOfDistanceTravelledToTargetLocation + currentEstimatedPosition.Point.Y) },
-                                IsEstimated = true };
-                            heroCCmdEventList.HeroUnit.Positions.Add(currentEstimatedPosition);
-                        }
-                    heroCCmdEventList.HeroUnit.Positions = heroCCmdEventList.HeroUnit.Positions.OrderBy(i => i.TimeSpan).ToList();
-                }
-            }
+            //    foreach (var playerCCmdEventList in playerAndHeroCCmdEventLists)
+            //    foreach (var heroCCmdEventList in playerCCmdEventList)
+            //    {
+            //        // Estimate the hero unit travelling to each intended destination
+            //        // Only save one position per second, and prefer accurate positions
+            //        // Heroes can have a lot more positions, and probably won't be useful more frequently than this
+            //        var heroTargetLocationArray = heroCCmdEventList.HeroUnit.Positions.Union(new[] { new Position { TimeSpan = heroCCmdEventList.HeroUnit.TimeSpanBorn, Point = heroCCmdEventList.HeroUnit.PointBorn } }).Union(heroCCmdEventList.Positions).GroupBy(i => (int)i.TimeSpan.TotalSeconds).Select(i => i.OrderBy(j => j.IsEstimated).First()).OrderBy(i => i.TimeSpan).ToArray();
+            //        var currentEstimatedPosition = heroTargetLocationArray[0];
+            //        for (var i = 0; i < heroTargetLocationArray.Length - 1; i++)
+            //            if (!heroTargetLocationArray[i + 1].IsEstimated)
+            //                currentEstimatedPosition = heroTargetLocationArray[i + 1];
+            //            else
+            //            {
+            //                var percentageOfDistanceTravelledToTargetLocation = (heroTargetLocationArray[i + 1].TimeSpan - currentEstimatedPosition.TimeSpan).TotalSeconds * PlayerSpeedUnitsPerSecond / currentEstimatedPosition.Point.DistanceTo(heroTargetLocationArray[i + 1].Point);
+            //                currentEstimatedPosition = new Position {
+            //                    TimeSpan = heroTargetLocationArray[i + 1].TimeSpan,
+            //                    Point = percentageOfDistanceTravelledToTargetLocation >= 1
+            //                        ? heroTargetLocationArray[i + 1].Point
+            //                        : new Point {
+            //                            X = (int)((heroTargetLocationArray[i + 1].Point.X - currentEstimatedPosition.Point.X) * percentageOfDistanceTravelledToTargetLocation + currentEstimatedPosition.Point.X),
+            //                            Y = (int)((heroTargetLocationArray[i + 1].Point.Y - currentEstimatedPosition.Point.Y) * percentageOfDistanceTravelledToTargetLocation + currentEstimatedPosition.Point.Y) },
+            //                    IsEstimated = true };
+            //                heroCCmdEventList.HeroUnit.Positions.Add(currentEstimatedPosition);
+            //            }
+            //        heroCCmdEventList.HeroUnit.Positions = heroCCmdEventList.HeroUnit.Positions.OrderBy(i => i.TimeSpan).ToList();
+            //    }
+            //}
 
             // Save no more than one position event per second per unit
             foreach (var unit in replay.Units.Where(i => i.Positions.Count > 0))

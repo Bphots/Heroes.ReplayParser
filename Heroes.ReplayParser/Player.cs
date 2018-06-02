@@ -130,6 +130,7 @@ namespace Heroes.ReplayParser
         /// <summary>
         /// Gets or sets the player's collection, no longer available since 56175
         /// </summary>
+        [JsonIgnore]
         public Dictionary<string, bool> PlayerCollectionDictionary { get; set; } = new Dictionary<string, bool>();
 
         /// <summary>

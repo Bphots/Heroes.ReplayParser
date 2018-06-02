@@ -144,8 +144,9 @@ namespace Heroes.ReplayParser
 							else
 								gameEvent.data.array[0] = new TrackerEventStructure { array = new TrackerEventStructure[26] };
 
-							for (var i = 0; i < gameEvent.data.array[0].array.Length; i++)
-                                gameEvent.data.array[0].array[i] = new TrackerEventStructure { DataType = 7, unsignedInt = bitReader.Read(1) };
+                            bitReader.Skip(gameEvent.data.array[0].array.Length);
+							//for (var i = 0; i < gameEvent.data.array[0].array.Length; i++)
+       //                         gameEvent.data.array[0].array[i] = new TrackerEventStructure { DataType = 7, unsignedInt = bitReader.Read(1) };
 
                             // m_abil
                             if (bitReader.ReadBoolean())
@@ -311,7 +312,8 @@ namespace Heroes.ReplayParser
                                 new TrackerEventStructure { vInt = bitReader.Read(32) - 2147483648 } } };
                             break;
                         case GameEventType.CUnitClickEvent:
-                            gameEvent.data = new TrackerEventStructure { unsignedInt = bitReader.Read(32) }; // m_unitTag
+                            bitReader.Skip(32);
+                            // gameEvent.data = new TrackerEventStructure { unsignedInt = bitReader.Read(32) }; // m_unitTag
                             break;
                         case GameEventType.CTriggerSkippedEvent:
                             break;
@@ -331,22 +333,28 @@ namespace Heroes.ReplayParser
                             gameEvent.data = new TrackerEventStructure { array = new TrackerEventStructure[6] };
                             if (bitReader.ReadBoolean())
                                 // m_target, x/y
-                                gameEvent.data.array[0] = new TrackerEventStructure { array = new[] { new TrackerEventStructure { unsignedInt = bitReader.Read(16) }, new TrackerEventStructure { unsignedInt = bitReader.Read(16) } } };
+                                bitReader.Skip(16 + 16);
+                                //gameEvent.data.array[0] = new TrackerEventStructure { array = new[] { new TrackerEventStructure { unsignedInt = bitReader.Read(16) }, new TrackerEventStructure { unsignedInt = bitReader.Read(16) } } };
                             if (bitReader.ReadBoolean())
                                 // m_distance
-                                gameEvent.data.array[1] = new TrackerEventStructure { unsignedInt = bitReader.Read(16) };
+                                bitReader.Skip(16);
+                                //gameEvent.data.array[1] = new TrackerEventStructure { unsignedInt = bitReader.Read(16) };
                             if (bitReader.ReadBoolean())
                                 // m_pitch
-                                gameEvent.data.array[2] = new TrackerEventStructure { unsignedInt = bitReader.Read(16) };
+                                bitReader.Skip(16);
+                                //gameEvent.data.array[2] = new TrackerEventStructure { unsignedInt = bitReader.Read(16) };
                             if (bitReader.ReadBoolean())
                                 // m_yaw
-                                gameEvent.data.array[3] = new TrackerEventStructure { unsignedInt = bitReader.Read(16) };
+                                bitReader.Skip(16);
+                                //gameEvent.data.array[3] = new TrackerEventStructure { unsignedInt = bitReader.Read(16) };
                             if (bitReader.ReadBoolean())
                                 // m_reason
-                                gameEvent.data.array[4] = new TrackerEventStructure { vInt = bitReader.Read(8) - 128 };
+                                bitReader.Skip(8);
+                                //gameEvent.data.array[4] = new TrackerEventStructure { vInt = bitReader.Read(8) - 128 };
 
                             // m_follow
-                            gameEvent.data.array[5] = new TrackerEventStructure { unsignedInt = bitReader.Read(1) };
+                            bitReader.Skip(1);
+                            //gameEvent.data.array[5] = new TrackerEventStructure { unsignedInt = bitReader.Read(1) };
                             break;
                         case GameEventType.CTriggerPlanetMissionLaunchedEvent:
                             bitReader.Read(32); // m_difficultyLevel, offset -2147483648
@@ -398,29 +406,32 @@ namespace Heroes.ReplayParser
                             gameEvent.data = new TrackerEventStructure { unsignedInt = bitReader.Read(1) };
                             break;
                         case GameEventType.CTriggerMouseClickedEvent:
-                            bitReader.Read(32); // m_button
-                            bitReader.ReadBoolean(); // m_down
-                            bitReader.Read(11); // m_posUI X
-                            bitReader.Read(11); // m_posUI Y
-                            bitReader.Read(20); // m_posWorld X
-                            bitReader.Read(20); // m_posWorld Y
-                            bitReader.Read(32); // m_posWorld Z (Offset -2147483648)
-                            bitReader.Read(8); // m_flags (-128)
+                            //bitReader.Read(32); // m_button
+                            //bitReader.ReadBoolean(); // m_down
+                            //bitReader.Read(11); // m_posUI X
+                            //bitReader.Read(11); // m_posUI Y
+                            //bitReader.Read(20); // m_posWorld X
+                            //bitReader.Read(20); // m_posWorld Y
+                            //bitReader.Read(32); // m_posWorld Z (Offset -2147483648)
+                            //bitReader.Read(8); // m_flags (-128)
+                            bitReader.Skip(32 + 1 + 11 + 11 + 20 + 20 + 32 + 8);
                             break;
                         case GameEventType.CTriggerMouseMovedEvent:
-                            gameEvent.data = new TrackerEventStructure { array = new[] {
-								// m_posUI
-                                new TrackerEventStructure { unsignedInt = bitReader.Read(11) },
-                                new TrackerEventStructure { unsignedInt = bitReader.Read(11) },
+                            bitReader.Skip(11 + 11 + 20 + 20 + 32 + 8);
+                            // gameEvent.data = new TrackerEventStructure { array = new[] {
+                            // m_posUI
+                            //                        new TrackerEventStructure { unsignedInt = bitReader.Read(11) },
+                            //                        new TrackerEventStructure { unsignedInt = bitReader.Read(11) },
 
-								// m_posWorld
-                                new TrackerEventStructure { array = new[] { new TrackerEventStructure { unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { vInt = bitReader.Read(32) - 2147483648 } } },
+                            //// m_posWorld
+                            //                        new TrackerEventStructure { array = new[] { new TrackerEventStructure { unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { vInt = bitReader.Read(32) - 2147483648 } } },
 
-								// m_flags
-                                new TrackerEventStructure { vInt = bitReader.Read(8) - 128 } } };
+                            //// m_flags
+                            //                        new TrackerEventStructure { vInt = bitReader.Read(8) - 128 } } };
                             break;
                         case GameEventType.CTriggerHotkeyPressedEvent:
-                            gameEvent.data = new TrackerEventStructure { unsignedInt = bitReader.Read(32) }; // May be missing an offset value
+                            bitReader.Skip(32);
+                            // gameEvent.data = new TrackerEventStructure { unsignedInt = bitReader.Read(32) }; // May be missing an offset value
                             break;
                         case GameEventType.CTriggerTargetModeUpdateEvent:
                             bitReader.Read(16); // m_abilLink
@@ -428,7 +439,8 @@ namespace Heroes.ReplayParser
                             bitReader.Read(8); // m_state (-128)
                             break;
                         case GameEventType.CTriggerSoundtrackDoneEvent:
-                            gameEvent.data = new TrackerEventStructure { unsignedInt = bitReader.Read(32) };
+                            bitReader.Skip(32);
+                            //gameEvent.data = new TrackerEventStructure { unsignedInt = bitReader.Read(32) };
                             break;
                         case GameEventType.CTriggerKeyPressedEvent:
                             gameEvent.data = new TrackerEventStructure { array = new[] { new TrackerEventStructure { vInt = bitReader.Read(8) - 128 }, new TrackerEventStructure { vInt = bitReader.Read(8) - 128 } } };
@@ -470,7 +482,8 @@ namespace Heroes.ReplayParser
                             if (replayBuild >= 40336 && bitReader.ReadBoolean())
                                 bitReader.Read(32);
 
-                            gameEvent.data = new TrackerEventStructure { array = new[] { new TrackerEventStructure { DataType = 7, unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { DataType = 7, unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { DataType = 9, vInt = bitReader.Read(32) - 2147483648 } } };
+                            bitReader.Skip(20 + 20 + 32);
+                            //gameEvent.data = new TrackerEventStructure { array = new[] { new TrackerEventStructure { DataType = 7, unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { DataType = 7, unsignedInt = bitReader.Read(20) }, new TrackerEventStructure { DataType = 9, vInt = bitReader.Read(32) - 2147483648 } } };
                             break;
                         case GameEventType.CCmdUpdateTargetUnitEvent:
                             if (replayBuild >= 40336 && bitReader.ReadBoolean())

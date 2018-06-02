@@ -26,6 +26,7 @@ namespace Heroes.ReplayParser
         public Player[] Players { get; set; }
 
         /// <summary> In some places, this is used instead of the 'Player' array, in games with less than 10 players </summary>
+        [JsonIgnore]
         public Player[] PlayersWithOpenSlots { get; set; } = new Player[10];
 
         /// <summary> Gets the build number of the Heroes version used in creating the replay. </summary>
@@ -44,9 +45,11 @@ namespace Heroes.ReplayParser
         public DateTime Timestamp { get; set; }
 
         /// <summary> Gets the list of all clients connected to the game, using 'm_userId' as index </summary>
+        [JsonIgnore]
         public Player[] ClientListByUserID { get; set; } = new Player[16];
 
         /// <summary> Gets the list of all clients connected to the game, using 'm_workingSetSlotId' as index </summary>
+        [JsonIgnore]
         public Player[] ClientListByWorkingSetSlotID { get; set; } = new Player[16];
 
         /// <summary> Gets the game events. </summary>
