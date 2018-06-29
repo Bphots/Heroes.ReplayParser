@@ -173,6 +173,31 @@ namespace Heroes.ReplayParser
 
             replay.TrackerEvents = ReplayTrackerEvents.Parse(GetMpqFile(archive, ReplayTrackerEvents.FileName));
 
+            List<string> nextBans = new List<string>();
+            int pickCount = 0;
+            if (replay.GameMode == GameMode.HeroLeague || replay.GameMode == GameMode.TeamLeague || replay.GameMode == GameMode.UnrankedDraft)
+            {
+                foreach (var trackerEvent in replay.TrackerEvents)
+                {
+                    try
+                    {
+                        if (trackerEvent.TrackerEventType == ReplayTrackerEvents.TrackerEventType.HeroBannedEvent)
+                        {
+                            replay.OrderedBans.Add(trackerEvent.Data.dictionary[0].blobText);
+                        }
+
+                        if (trackerEvent.TrackerEventType == ReplayTrackerEvents.TrackerEventType.HeroPickedEvent)
+                        {
+                            pickCount++;
+                            replay.OrderedPicks.Add(trackerEvent.Data.dictionary[0].blobText);
+                        }
+                    }
+                    catch { }
+                    if (pickCount == 10)
+                        break;
+                }
+            }
+
             if (!fullParse)
                 return;
 
