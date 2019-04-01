@@ -82,6 +82,26 @@ namespace Heroes.ReplayParser
         public string MountAndMountTint { get; set; } = null;
 
         /// <summary>
+        /// Gets or sets the player's banner
+        /// </summary>
+        public string Banner { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets the player's Spray
+        /// </summary>
+        public string Spray { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets the player's announcer pack
+        /// </summary>
+        public string AnnouncerPack { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets the player's voice line
+        /// </summary>
+        public string VoiceLine { get; set; } = null;
+
+        /// <summary>
         /// Gets or sets the player's character level.
         /// </summary>
         public int CharacterLevel { get; set; }
@@ -96,10 +116,10 @@ namespace Heroes.ReplayParser
         /// </summary>
         public bool IsVoiceSilence { get; set; } = false;
 
-		/// <summary>
-		/// Gets or sets if the player is Blizzard staff
-		/// </summary>
-		public bool IsBlizzardStaff { get; set; } = false;
+        /// <summary>
+        /// Gets or sets if the player is Blizzard staff
+        /// </summary>
+        public bool IsBlizzardStaff { get; set; } = false;
 
         /// <summary>
         /// Gets or sets if the player has an active boost
@@ -157,6 +177,11 @@ namespace Heroes.ReplayParser
         /// Gets or sets the player's account level
         /// </summary>
         public int AccountLevel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the player's heroes mastery tier levels
+        /// </summary>
+        public List<HeroMasteryTier> HeroMasteryTiers { get; set; } = new List<HeroMasteryTier>();
     }
 
     public class ScoreResult
@@ -181,9 +206,9 @@ namespace Heroes.ReplayParser
         public int SelfHealing { get; set; } = 0;
 
         public int? DamageTaken { get; set; } = null;
-		public int? DamageSoaked { get; set; } = null;
+        public int? DamageSoaked { get; set; } = null;
 
-		public int ExperienceContribution { get; set; } = 0;
+        public int ExperienceContribution { get; set; } = 0;
         public int TownKills { get; set; } = 0;
 
         public TimeSpan TimeSpentDead { get; set; } = TimeSpan.Zero;
@@ -228,6 +253,17 @@ namespace Heroes.ReplayParser
         public int Value { get; set; }
     }
 
+    public class HeroMasteryTier
+    {
+        public string HeroAttributeId { get; set; }
+        public int TierLevel { get; set; }
+
+        public override string ToString()
+        {
+            return $"{HeroAttributeId}: {TierLevel}";
+        }
+    }
+
     public enum PlayerType
     {
         Human,
@@ -251,8 +287,8 @@ namespace Heroes.ReplayParser
         GallTalentDarkDescentUpgrade = 2,
         RegenMasterStacks = 3,
         MarksmanStacks = 4,
-		WitchDoctorPlagueofToadsPandemicTalentCompletion = 5
-	}
+        WitchDoctorPlagueofToadsPandemicTalentCompletion = 5
+    }
 
     public enum MatchAwardType
     {
@@ -267,7 +303,7 @@ namespace Heroes.ReplayParser
         MostStuns = 8,
         MostMercCampsCaptured = 9,
         // MapSpecific = 10, - Instead of tracking this generic one, just check if the player has one of the other map-specific Match Awards above 1000
-        
+
         MostKills = 11,
         HatTrick = 12,
         ClutchHealer = 13,
@@ -288,7 +324,7 @@ namespace Heroes.ReplayParser
         MostCurseDamageDone = 1003,
         MostDragonShrinesCaptured = 1004,
         MostDamageToPlants = 1005,
-		MostSkullsCollected = 1006,
+        MostSkullsCollected = 1006,
         MostDamageToMinions = 1007,
         MostTimeInTemple = 1008,
         MostGemsTurnedIn = 1009,
@@ -296,9 +332,9 @@ namespace Heroes.ReplayParser
         // Lost Cavern = 1011 - No map award
         MostDamageDoneToZerg = 1012,
         MostNukeDamageDone = 1013,
-		MostTimePushing = 1016,
-		MostTimeOnPoint = 1019,
-		MostInterruptedCageUnlocks = 1022,
+        MostTimePushing = 1016,
+        MostTimeOnPoint = 1019,
+        MostInterruptedCageUnlocks = 1022,
         MostSeedsCollected = 1023
     }
 }

@@ -189,7 +189,8 @@ namespace Heroes.ReplayParser
         HeroLeague = 4,
         TeamLeague = 5,
         UnrankedDraft = 6,
-        Brawl = 7
+        Brawl = 7,
+        StormLeague = 8
     }
 
     public enum GameSpeed
